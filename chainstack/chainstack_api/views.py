@@ -1,21 +1,41 @@
-from django.contrib.auth.models import User, Group
-from rest_framework import viewsets
+
 from rest_framework import permissions
-from tutorial.quickstart.serializers import UserSerializer, GroupSerializer
-
-class UserViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
-    queryset = User.objects.all().order_by('-date_joined')
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+from .models import NewsItem
+from .serializers import NewsItemSerializer
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 
 
-class GroupViewSet(viewsets.ModelViewSet):
+
+def create_news_item(request):
+    """_summary_
+
+    Args:
+        request (_type_): http request object
+
+    Returns:
+        _type:Json response if news item was created successfully
     """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    queryset = Group.objects.all()
-    serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    try:
+      
+        permission_classes = [permissions.AllowAny]
+    
+        if request.method == 'POST':
+            
+            
+            
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            body['created_via'] = 'api'
+            #build data object
+            body['id'] = generate_id()
+            
+            serializer = NewsItemSerializer(data=body)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
+        return JsonResponse({'message':'Request method most be POST'},status=status.HTTP_403_FORBIDDEN)
+    except:
+        return JsonResponse({"message":"Error creating news item please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+   

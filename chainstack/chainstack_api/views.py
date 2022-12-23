@@ -5,9 +5,29 @@ from .serializers import NewsItemSerializer
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.contrib.auth.models import User
 
 
 
+def generate_token(user_email,password):
+    """Generate a token a user can use to authenticate api calls
+
+    Args:
+        user (string): user_email_address
+        password (string): user_passwor
+
+    Returns:
+        _type_: List containing the token to use
+    """
+    if user and password:
+        #check if user exists
+        user = User.objects.filter(email=user)
+        
+        if user:
+            #verify password
+            User.check_password(password) 
+            
+#@csrf_exempt #to test via local host postman
 def create_news_item(request):
     """_summary_
 
@@ -18,16 +38,15 @@ def create_news_item(request):
         _type:Json response if news item was created successfully
     """
     try:
-      
         permission_classes = [permissions.AllowAny]
-    
+        print(request.user)
         if request.method == 'POST':
             body_unicode = request.body.decode('utf-8')
+            
             body = json.loads(body_unicode)
             body['created_via'] = 'api'
             #build data object
             body['id'] = generate_id()
-            
             serializer = NewsItemSerializer(data=body)
             if serializer.is_valid():
                 serializer.save()
@@ -38,7 +57,17 @@ def create_news_item(request):
    
    
 def generate_id():
-    """generate id for News Item"""
+    """generate random id for News Item"""
    
     ref = ''.join(random.choices(string.digits, k = 8))
     return ref 
+
+def update_news_item(request):
+    pass
+
+def delete_news(request):
+    pass
+
+def read_news(request):
+    pass
+

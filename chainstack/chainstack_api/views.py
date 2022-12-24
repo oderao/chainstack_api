@@ -1,15 +1,18 @@
 import json,random,string
 from rest_framework import permissions,status
+from rest_framework.decorators import api_view
 from .models import NewsItem
 from .serializers import NewsItemSerializer
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication,TokenAuthentication
 
 
 
-def generate_token(user_email,password):
+def generate_token(request):
     """Generate a token a user can use to authenticate api calls
 
     Args:
@@ -19,15 +22,25 @@ def generate_token(user_email,password):
     Returns:
         _type_: List containing the token to use
     """
-    if user and password:
+    user_email = request.GET.get('user_email')
+    password = request.GET.get('password')
+    if user_email and password:
         #check if user exists
-        user = User.objects.filter(email=user)
+        user = User.objects.filter(email=user_email)
         
-        if user:
-            #verify password
-            User.check_password(password) 
+        #verify password
+        if user and user[0].check_password(password):
+            #generate token to use
+            token, created = Token.objects.get_or_create(user=user[0])
+            return JsonResponse({'token':token.key}, safe=False,status=status.HTTP_201_CREATED)
+        else:
+            return JsonResponse({'message':'user not found'}, safe=False,status=status.HTTP_404_NOT_FOUND)
             
-#@csrf_exempt #to test via local host postman
+    else:
+        return JsonResponse({'message':'no user name or password in request'}, safe=False,status=status.HTTP_400_BAD_REQUEST)        
+    
+@csrf_exempt #to test via local host postman
+@api_view(['POST'])
 def create_news_item(request):
     """_summary_
 
@@ -38,7 +51,6 @@ def create_news_item(request):
         _type:Json response if news item was created successfully
     """
     try:
-        permission_classes = [permissions.AllowAny]
         print(request.user)
         if request.method == 'POST':
             body_unicode = request.body.decode('utf-8')

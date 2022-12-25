@@ -51,20 +51,25 @@ def create_news_item(request):
         _type:Json response if news item was created successfully
     """
     try:
-        print(request.user)
+       
         if request.method == 'POST':
             body_unicode = request.body.decode('utf-8')
-            
+            context = {}
             body = json.loads(body_unicode)
-            body['created_via'] = 'api'
+            request_user = User.objects.filter(username=request.user)
+            if request_user:
+                context = {'created_by':request_user[0]}
             #build data object
-            body['id'] = generate_id()
-            serializer = NewsItemSerializer(data=body)
+            #body['id'] = generate_id()
+            print(body)
+            serializer = NewsItemSerializer(data=body,context=context)
             if serializer.is_valid():
                 serializer.save()
                 return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
-        return JsonResponse({'message':'Request method most be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
-    except:
+        else:
+            return JsonResponse({'message':'Request method must be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
+    except Exception as e:
+        print(e)
         return JsonResponse({"message":"Error creating news item please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
    
    

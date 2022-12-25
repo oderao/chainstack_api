@@ -90,8 +90,15 @@ def log_and_validate_request(user):
         user (_type_): user making the request
     """
     #NOTE Anon user rate limit is controlled is the django settings
+    #superuser shouldnt be rate limited
+    user = User.objects.filter(username=user)
+    
+    if user and user[0].is_superuser:
+        return True
     #check if log exists
+    
     request_tracker = APIRequestTracker.objects.filter(user=user)
+    
     if request_tracker:
         #check current_request_counter 
         request_tracker = request_tracker[0]

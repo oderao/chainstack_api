@@ -18,12 +18,12 @@ class NewsItem(models.Model):
                     ('','')
                     ]
     
-    news_id =  models.CharField(null=True,max_length=200) #unique id of NewsItem
+    news_id =  models.CharField(primary_key=True,max_length=200) #unique id of NewsItem
     created_by = models.ForeignKey(User, on_delete=models.CASCADE) 
     #descendants = models.IntegerField(null=True) #In the case of stories or polls, the total comment count.
     #id = models.IntegerField(primary_key=True,null=False) #The item's unique id
     date_created = models.DateTimeField(null=True) #Creation date of the item in unix time
-    title = models.CharField(primary_key =True,max_length=300) #The title of the story, poll or job.
+    title = models.CharField(max_length=300) #The title of the news story, poll or job.
     story_type = models.CharField(null=True,max_length=10,choices=item_types,default='')
     url = models.CharField(null=True,max_length=300) #The URL of the story.
 

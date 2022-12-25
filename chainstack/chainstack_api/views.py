@@ -60,7 +60,7 @@ def create_news_item(request):
                 if request_user:
                     context = {'created_by':request_user[0]}
                 #build data object
-                #body['id'] = generate_id()
+                body['news_id'] = generate_id()
                 serializer = NewsItemSerializer(data=body,context=context)
                 if serializer.is_valid():
                     serializer.save()
@@ -78,7 +78,7 @@ def create_news_item(request):
 def generate_id():
     """generate random id for News Item"""
    
-    ref = ''.join(random.choices(string.digits, k = 8))
+    ref = ''.join(random.choices(string.digits+string.ascii_uppercase, k = 8))
     return ref 
 
 

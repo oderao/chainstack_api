@@ -4,5 +4,11 @@ from django.contrib import admin
 
 from .models import NewsItem,APIRequestTracker
 
-admin.site.register(NewsItem)
+
+
+class NewsItemAdmin(admin.ModelAdmin):
+    list_display = ("news_id","title")
+    
+
+admin.site.register(NewsItem,NewsItemAdmin)
 admin.site.register(APIRequestTracker)

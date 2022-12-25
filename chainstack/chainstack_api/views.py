@@ -95,6 +95,8 @@ def log_and_validate_request(user):
     if request_tracker:
         #check current_request_counter 
         request_tracker = request_tracker[0]
+        if request_tracker.request_limit == 0: #0 is default means no rate limit has been set yet
+            return True
         if request_tracker.current_request_count >= request_tracker.request_limit:
             return False
         else: #update current request_count

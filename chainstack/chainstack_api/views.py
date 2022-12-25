@@ -110,6 +110,7 @@ def log_and_validate_request(user):
         request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
         request_tracker.save()
         return True
+
         
             
 def update_news_item(request):
@@ -118,6 +119,21 @@ def update_news_item(request):
 def delete_news(request):
     pass
 
+
+@api_view(['GET'])
 def read_news(request):
-    pass
+    if request.method == 'GET':
+        #check if user is superuser ie admin
+        user = User.objects.filter(username=request.user)
+        if user and user[0].is_superuser:
+            pass
+            news_list = NewsItem.objects.all().order_by('-date_created')
+        else:
+            news_list = NewsItem.objects.all().filter(created_by=request.user).order_by('-date_created')
+                    
+        news_list_data = NewsItemSerializer(news_list, many=True)
+        
+        if news_list_data.data:
+            return JsonResponse(news_list_data.data, safe=False)
+        return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
 

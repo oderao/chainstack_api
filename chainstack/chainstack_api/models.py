@@ -18,8 +18,8 @@ class NewsItem(models.Model):
                     ('','')
                     ]
     
-    by =  models.CharField(null=True,max_length=200) #The username of the item's author
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    news_id =  models.CharField(null=True,max_length=200) #unique id of NewsItem
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE) 
     #descendants = models.IntegerField(null=True) #In the case of stories or polls, the total comment count.
     #id = models.IntegerField(primary_key=True,null=False) #The item's unique id
     date_created = models.DateTimeField(null=True) #Creation date of the item in unix time

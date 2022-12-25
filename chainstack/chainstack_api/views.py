@@ -116,8 +116,30 @@ def log_and_validate_request(user):
 def update_news_item(request):
     pass
 
+
+@api_view(['DELETE'])
 def delete_news(request):
-    pass
+    try:      
+      if request.method == "DELETE":
+         body_unicode = request.body.decode('utf-8')
+         body = json.loads(body_unicode)
+         if body.get('news_id'):
+            item = NewsItem.objects.get(pk=body.get("news_id"))
+            if item and item.created_by == request.user: #user should delete only resources they create
+               item.delete()
+               return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
+               
+            else:
+               return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
+               
+         else:
+            return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
+      return JsonResponse({'message':'Request method must be DELETE'},status=status.HTTP_403_FORBIDDEN)
+
+    except NewsItem.DoesNotExist:
+      return JsonResponse({"message":"Error deleting news item please try again later",
+                           "error":"News Item Does not exist"
+                           },status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

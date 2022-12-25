@@ -42,3 +42,12 @@ class NewsItem(models.Model):
     
     def __str__(self):
         return self.title
+    
+class APIRequestTracker(models.Model):
+    
+    user = models.ForeignKey(User,unique=True, on_delete=models.CASCADE)
+    request_limit = models.PositiveIntegerField(default=0)
+    current_request_count = models.PositiveIntegerField(default=0)
+    
+    def __str__(self):
+        return str(self.user)

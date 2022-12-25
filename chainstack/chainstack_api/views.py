@@ -1,7 +1,7 @@
 import json,random,string
 from rest_framework import permissions,status
 from rest_framework.decorators import api_view
-from .models import NewsItem
+from .models import NewsItem,APIRequestTracker
 from .serializers import NewsItemSerializer
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -51,23 +51,25 @@ def create_news_item(request):
         _type:Json response if news item was created successfully
     """
     try:
-       
-        if request.method == 'POST':
-            body_unicode = request.body.decode('utf-8')
-            context = {}
-            body = json.loads(body_unicode)
-            request_user = User.objects.filter(username=request.user)
-            if request_user:
-                context = {'created_by':request_user[0]}
-            #build data object
-            #body['id'] = generate_id()
-            print(body)
-            serializer = NewsItemSerializer(data=body,context=context)
-            if serializer.is_valid():
-                serializer.save()
-                return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
+        if log_and_validate_request(request.user):
+            if request.method == 'POST':
+                body_unicode = request.body.decode('utf-8')
+                context = {}
+                body = json.loads(body_unicode)
+                request_user = User.objects.filter(username=request.user)
+                if request_user:
+                    context = {'created_by':request_user[0]}
+                #build data object
+                #body['id'] = generate_id()
+                serializer = NewsItemSerializer(data=body,context=context)
+                if serializer.is_valid():
+                    serializer.save()
+                    return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
+            else:
+                return JsonResponse({'message':'Request method must be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
         else:
-            return JsonResponse({'message':'Request method must be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
+            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            
     except Exception as e:
         print(e)
         return JsonResponse({"message":"Error creating news item please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -79,6 +81,35 @@ def generate_id():
     ref = ''.join(random.choices(string.digits, k = 8))
     return ref 
 
+
+
+def log_and_validate_request(user):
+    """Log all api requests and validate request limits
+
+    Args:
+        user (_type_): user making the request
+    """
+    #NOTE Anon user rate limit is controlled is the django settings
+    #check if log exists
+    request_tracker = APIRequestTracker.objects.filter(user=user)
+    if request_tracker:
+        #check current_request_counter 
+        request_tracker = request_tracker[0]
+        if request_tracker.current_request_count >= request_tracker.request_limit:
+            return False
+        else: #update current request_count
+            request_tracker.current_request_count +=1
+            request_tracker.save()
+            return True
+    else: #create a new tracker object
+        #get user instance
+        user = User.objects.filter(username=user)
+        user = user[0]
+        request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
+        request_tracker.save()
+        return True
+        
+            
 def update_news_item(request):
     pass
 

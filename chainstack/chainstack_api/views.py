@@ -230,11 +230,14 @@ def list_users(request):
     """get a list of all users on the system"""
     try:
         if check_superuser(request.user):
-            user_list = User.objects.all().values().order_by('-username')
+            
+            user_list = User.objects.all().values('username','email','is_superuser','date_joined').order_by('-username')
             if user_list:
+                user_list = list(user_list)
                 return JsonResponse({'data':user_list}, safe=False)
             return JsonResponse({'message':'No users in db'},status=status.HTTP_404_NOT_FOUND)
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse({'message':'Error listing users please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     

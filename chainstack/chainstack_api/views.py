@@ -1,6 +1,6 @@
 import json,random,string
 from rest_framework import permissions,status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,authentication_classes
 from .models import NewsItem,APIRequestTracker
 from .serializers import NewsItemSerializer
 from django.http import JsonResponse
@@ -41,6 +41,8 @@ def generate_token(request):
     
 
 @api_view(['POST'])
+
+@authentication_classes([TokenAuthentication])
 def create_news_item(request):
     """_summary_
 
@@ -66,7 +68,7 @@ def create_news_item(request):
                 serializer.save()
                 return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
         else:
-            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
     except Exception as e:
         print(e)
@@ -144,7 +146,7 @@ def delete_news(request):
             else:
                 return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
         else:
-            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
         
     except NewsItem.DoesNotExist:
@@ -171,7 +173,7 @@ def read_news(request):
                 return JsonResponse(news_list_data.data, safe=False)
             return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
         else:
-            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
     except:
         return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)

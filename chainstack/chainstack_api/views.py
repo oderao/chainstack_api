@@ -39,7 +39,7 @@ def generate_token(request):
     else:
         return JsonResponse({'message':'no user name or password in request'}, safe=False,status=status.HTTP_400_BAD_REQUEST)        
     
-@csrf_exempt #to test via local host postman
+
 @api_view(['POST'])
 def create_news_item(request):
     """_summary_
@@ -52,21 +52,19 @@ def create_news_item(request):
     """
     try:
         if log_and_validate_request(request.user):
-            if request.method == 'POST':
-                body_unicode = request.body.decode('utf-8')
-                context = {}
-                body = json.loads(body_unicode)
-                request_user = User.objects.filter(username=request.user)
-                if request_user:
-                    context = {'created_by':request_user[0]}
-                #build data object
-                body['news_id'] = generate_id()
-                serializer = NewsItemSerializer(data=body,context=context)
-                if serializer.is_valid():
-                    serializer.save()
-                    return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
-            else:
-                return JsonResponse({'message':'Request method must be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
+            
+            body_unicode = request.body.decode('utf-8')
+            context = {}
+            body = json.loads(body_unicode)
+            request_user = User.objects.filter(username=request.user)
+            if request_user:
+                context = {'created_by':request_user[0]}
+            #build data object
+            body['news_id'] = generate_id()
+            serializer = NewsItemSerializer(data=body,context=context)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
         else:
             return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             

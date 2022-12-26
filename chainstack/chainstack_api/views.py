@@ -1,6 +1,7 @@
 import json,random,string
 from rest_framework import permissions,status
-from rest_framework.decorators import api_view,authentication_classes
+from rest_framework.decorators import api_view,authentication_classes,permission_classes
+from rest_framework.permissions import IsAuthenticated
 from .models import NewsItem,APIRequestTracker
 from .serializers import NewsItemSerializer
 from django.http import JsonResponse
@@ -41,7 +42,7 @@ def generate_token(request):
     
 
 @api_view(['POST'])
-@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def create_news_item(request):
     """_summary_
 
@@ -127,6 +128,7 @@ def update_news_item(request):
 
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_news(request):
     """delete news item by its id"""
     try:
@@ -155,6 +157,7 @@ def delete_news(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def read_news(request):
     """retrieve news items created by single user or all by superuser """
     try: 
@@ -179,6 +182,7 @@ def read_news(request):
         
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_user(request,*args,**kwargs):
     """Create userS on the backend
 
@@ -217,6 +221,7 @@ def create_user(request,*args,**kwargs):
     
     
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_user(request):
     """delete user by its given usrname"""
     try:
@@ -237,8 +242,10 @@ def delete_user(request):
         
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_users(request):
     """get a list of all users on the system"""
+    print(request.auth)
     try:
         if check_superuser(request.user):
             
@@ -258,6 +265,7 @@ def list_users(request):
     
     
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def set_rate_limit_for_user(request):
     """Set rate limit for user
 

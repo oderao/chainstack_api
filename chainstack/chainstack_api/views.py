@@ -186,26 +186,29 @@ def create_user(request,*args,**kwargs):
         request (_type_): http request object
     """
     try:
-        user_dict = {}
-        password = request.GET.get('password')
-        username = request.GET.get('username')
-        email = request.GET.get('email')
-        superuser = request.GET.get('superuser',0)
-        if username and password and email:
-            user_dict.update({
-                'password':password,
-                'username':username,
-                'email':email,
-                'is_superuser':superuser
-            })
-            #create user
-            user_model = User.objects.create_user(**user_dict)
-            user_model.save()
-            return JsonResponse({'message':'User Created',
-                                 'user_details':user_dict},status=status.HTTP_201_CREATED)
-            
+        if check_superuser(request.user):
+            user_dict = {}
+            password = request.GET.get('password')
+            username = request.GET.get('username')
+            email = request.GET.get('email')
+            superuser = request.GET.get('superuser',0)
+            if username and password and email:
+                user_dict.update({
+                    'password':password,
+                    'username':username,
+                    'email':email,
+                    'is_superuser':superuser
+                })
+                #create user
+                user_model = User.objects.create_user(**user_dict)
+                user_model.save()
+                return JsonResponse({'message':'User Created',
+                                    'user_details':user_dict},status=status.HTTP_201_CREATED)
+                
+            else:
+                return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
         else:
-            return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
+            return JsonResponse({'message':'only admin can delete user'},status=status.HTTP_401_UNAUTHORIZED)
     except:
         return JsonResponse({'message':'Error creating user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
@@ -217,15 +220,18 @@ def create_user(request,*args,**kwargs):
 def delete_user(request):
     """delete user by its given usrname"""
     try:
-        username = request.GET.get('username')
-        if username:
-            user_model = User.objects.get(username=username)
-            user_model.delete()
-            return JsonResponse({'message':'User Deleted'},status=status.HTTP_200_OK)
-            
+        if check_superuser(request.user):
+            username = request.GET.get('username')
+            if username:
+                user_model = User.objects.get(username=username)
+                user_model.delete()
+                return JsonResponse({'message':'User Deleted'},status=status.HTTP_200_OK)
+                
+            else:
+                return JsonResponse({'message':'No username in request parameter'},status=status.HTTP_417_EXPECTATION_FAILED)
         else:
-            return JsonResponse({'message':'No username in request parameter'},status=status.HTTP_417_EXPECTATION_FAILED)
-            
+            return JsonResponse({'message':'only admin can delete user'},status=status.HTTP_401_UNAUTHORIZED)
+                
     except:
         return JsonResponse({'message':'Error deleting user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -241,6 +247,9 @@ def list_users(request):
                 user_list = list(user_list)
                 return JsonResponse({'data':user_list}, safe=False)
             return JsonResponse({'message':'No users in db'},status=status.HTTP_404_NOT_FOUND)
+        else:
+            return JsonResponse({'message':'only admin can list users'},status=status.HTTP_401_UNAUTHORIZED)
+            
     except Exception as e:
         print(e)
         return JsonResponse({'message':'Error listing users please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)

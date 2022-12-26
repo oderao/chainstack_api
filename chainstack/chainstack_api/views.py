@@ -41,7 +41,6 @@ def generate_token(request):
     
 
 @api_view(['POST'])
-
 @authentication_classes([TokenAuthentication])
 def create_news_item(request):
     """_summary_
@@ -200,7 +199,7 @@ def create_user(request,*args,**kwargs):
                 'is_superuser':superuser
             })
             #create user
-            user_model = User.objects.create(**user_dict)
+            user_model = User.objects.create_user(**user_dict)
             user_model.save()
             return JsonResponse({'message':'User Created',
                                  'user_details':user_dict},status=status.HTTP_201_CREATED)

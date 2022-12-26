@@ -127,6 +127,7 @@ def update_news_item(request):
 
 @api_view(['DELETE'])
 def delete_news(request):
+    """delete news item by its id"""
     try:      
       if request.method == "DELETE":
          body_unicode = request.body.decode('utf-8')
@@ -152,23 +153,27 @@ def delete_news(request):
 
 @api_view(['GET'])
 def read_news(request):
-    if request.method == 'GET':
-        #check if user is superuser ie admin
-        user = User.objects.filter(username=request.user)
-        if user and user[0].is_superuser:
-            pass
-            news_list = NewsItem.objects.all().order_by('-date_created')
-        else:
-            news_list = NewsItem.objects.all().filter(created_by=request.user).order_by('-date_created')
-                    
-        news_list_data = NewsItemSerializer(news_list, many=True)
+    """retrieve news items created by single user or all by superuser """
+    try: 
+        if request.method == 'GET':
+            #check if user is superuser ie admin
+            user = User.objects.filter(username=request.user)
+            if user and user[0].is_superuser:
+                pass
+                news_list = NewsItem.objects.all().order_by('-date_created')
+            else:
+                news_list = NewsItem.objects.all().filter(created_by=request.user).order_by('-date_created')
+                        
+            news_list_data = NewsItemSerializer(news_list, many=True)
+            
+            if news_list_data.data:
+                return JsonResponse(news_list_data.data, safe=False)
+            return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
+    except:
+        return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        if news_list_data.data:
-            return JsonResponse(news_list_data.data, safe=False)
-        return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
 
-
-def create_user(*args,**kwargs):
+def create_user(request,*args,**kwargs):
     """Create user on the backend
 
     Args:
@@ -187,29 +192,32 @@ def set_rate_limit_for_user(request):
         request (_type_): http request object
     """
     #check if request tracker already exists for user
-    request_limit = request.GET.get('request_limit',0)
-    user = request.GET.get('user')
-    if user and User.objects.filter(username=user):
-        #get user instance
-        user_model = User.objects.filter(username=user)
-        if user_model and user_model[0].is_superuser:
-            return JsonResponse({"message":"superuser has no limit"},safe=False,status=status.HTTP_404_NOT_FOUND)
-            
-       
-        #check if tracker already exists
-        request_tracker = APIRequestTracker.objects.filter(user=user_model[0])
+    try:
+        request_limit = request.GET.get('request_limit',0)
+        user = request.GET.get('user')
+        if user and User.objects.filter(username=user):
+            #get user instance
+            user_model = User.objects.filter(username=user)
+            if user_model and user_model[0].is_superuser:
+                return JsonResponse({"message":"superuser has no limit"},safe=False,status=status.HTTP_404_NOT_FOUND)
+                
         
-        if request_tracker:
-            #update tracker
-            request_tracker[0].request_limit = request_limit
-            request_tracker[0].save()
-            return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)
+            #check if tracker already exists
+            request_tracker = APIRequestTracker.objects.filter(user=user_model[0])
             
+            if request_tracker:
+                #update tracker
+                request_tracker[0].request_limit = request_limit
+                request_tracker[0].save()
+                return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)
+                
+            else:
+                request_tracker = APIRequestTracker.objects.create(**{'user':user_model[0],'request_limit':request_limit})
+                request_tracker.save()
+                return JsonResponse({"message":"Rate limit set"},safe=False,status=status.HTTP_201_CREATED)
+                
         else:
-            request_tracker = APIRequestTracker.objects.create(**{'user':user_model[0],'request_limit':request_limit})
-            request_tracker.save()
-            return JsonResponse({"message":"Rate limit set"},safe=False,status=status.HTTP_201_CREATED)
-            
-    else:
-        return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
-        
+            return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
+    except:
+        return JsonResponse({"message":"Error setting quota please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+               

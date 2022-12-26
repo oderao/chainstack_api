@@ -94,8 +94,8 @@ def log_and_validate_request(user,rate_limit=0):
     
     user_object = User.objects.filter(username=user)
     
-    # if user and user_object[0].is_superuser:
-    #     return True
+    if user and user_object[0].is_superuser:
+        return True
     # #check if log exists
     
     request_tracker = APIRequestTracker.objects.filter(user=user)
@@ -173,13 +173,41 @@ def read_news(request):
         return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+@api_view(['POST'])
 def create_user(request,*args,**kwargs):
     """Create user on the backend
 
     Args:
         request (_type_): _description_
     """
-    pass
+    try:
+        user_dict = {}
+        password = request.GET.get('password')
+        username = request.GET.get('username')
+        email = request.GET.get('email')
+        superuser = request.GET.get('superuser',0)
+        if username and password and email:
+            user_dict.update({
+                'password':password,
+                'username':username,
+                'email':email,
+                'is_superuser':superuser
+            })
+            #create user
+            user_model = User.objects.create(**user_dict)
+            user_model.save()
+            return JsonResponse({'message':'User Created',
+                                 'user_details':user_dict},status=status.HTTP_201_CREATED)
+            
+        else:
+            return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
+    except:
+        return JsonResponse({'message':'Error creating user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        
+    
+    
+    
 
 def delete_user(request):
     pass

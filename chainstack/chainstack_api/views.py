@@ -157,11 +157,10 @@ def delete_news(request):
 def read_news(request):
     """retrieve news items created by single user or all by superuser """
     try: 
-        if request.method == 'GET':
+        if log_and_validate_request(request.user):
             #check if user is superuser ie admin
             user = User.objects.filter(username=request.user)
             if user and user[0].is_superuser:
-                pass
                 news_list = NewsItem.objects.all().order_by('-date_created')
             else:
                 news_list = NewsItem.objects.all().filter(created_by=request.user).order_by('-date_created')
@@ -171,6 +170,9 @@ def read_news(request):
             if news_list_data.data:
                 return JsonResponse(news_list_data.data, safe=False)
             return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
+        else:
+            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            
     except:
         return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

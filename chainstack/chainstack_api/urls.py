@@ -15,6 +15,7 @@ urlpatterns = [
     path('create_user',views.create_user),
     path('delete_user',views.delete_user),
     path('list_users',views.list_users),
+    path('create_admin',views.create_admin),
     path('get_auth_token/',views.generate_token)
     
     

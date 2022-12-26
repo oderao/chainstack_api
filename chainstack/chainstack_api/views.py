@@ -321,5 +321,33 @@ def check_superuser(user):
         return True
     else:
         return False
+   
+   
+@api_view(['POST'])     
+def create_admin(request):
+    """Create a platform administrator with backend access"""
+    
+    try:
         
-        
+        user_dict = {}
+        password = request.GET.get('password')
+        username = request.GET.get('username')
+        email = request.GET.get('email')
+        if username and password and email:
+            user_dict.update({
+                'password':password,
+                'username':username,
+                'email':email,
+                'is_superuser':1,
+                'is_staff':1
+            })
+            #create user
+            user_model = User.objects.create_user(**user_dict)
+            user_model.save()
+            return JsonResponse({'message':'Platform Admin Created',
+                                'user_details':user_dict},status=status.HTTP_201_CREATED)
+        else:
+            return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
+    except:
+            return JsonResponse({'message':'Error creating platform admin'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            

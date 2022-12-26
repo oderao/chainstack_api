@@ -66,7 +66,7 @@ def create_news_item(request):
             serializer = NewsItemSerializer(data=body,context=context)
             if serializer.is_valid():
                 serializer.save()
-                return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
+                return JsonResponse({'message':'News Item Created Successfully','data':{'news_id':body['news_id']}}, safe=False,status=status.HTTP_201_CREATED)
         else:
             return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
@@ -229,6 +229,7 @@ def delete_user(request):
             username = request.GET.get('username')
             if username:
                 user_model = User.objects.get(username=username)
+                
                 user_model.delete()
                 return JsonResponse({'message':'User Deleted'},status=status.HTTP_200_OK)
                 

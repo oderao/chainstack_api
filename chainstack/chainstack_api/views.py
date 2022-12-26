@@ -276,6 +276,7 @@ def set_rate_limit_for_user(request):
     #check if request tracker already exists for user
     try:
         request_limit = request.GET.get('request_limit',0)
+        reset = request.GET.get('reset')
         user = request.GET.get('user')
         if user and User.objects.filter(username=user):
             #get user instance
@@ -289,6 +290,9 @@ def set_rate_limit_for_user(request):
             
             if request_tracker:
                 #update tracker
+                if reset: #reset all counters to zero
+                    request_limit = 0
+                    request_tracker[0].current_request_count = 0
                 request_tracker[0].request_limit = request_limit
                 request_tracker[0].save()
                 return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)

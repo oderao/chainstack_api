@@ -175,10 +175,10 @@ def read_news(request):
 
 @api_view(['POST'])
 def create_user(request,*args,**kwargs):
-    """Create user on the backend
+    """Create userS on the backend
 
     Args:
-        request (_type_): _description_
+        request (_type_): http request object
     """
     try:
         user_dict = {}
@@ -208,9 +208,22 @@ def create_user(request,*args,**kwargs):
     
     
     
-
+@api_view(['DELETE'])
 def delete_user(request):
-    pass
+    """delete user by its given usrname"""
+    try:
+        username = request.GET.get('username')
+        if username:
+            user_model = User.objects.get(username=username)
+            user_model.delete()
+            return JsonResponse({'message':'User Deleted'},status=status.HTTP_200_OK)
+            
+        else:
+            return JsonResponse({'message':'No username in request parameter'},status=status.HTTP_417_EXPECTATION_FAILED)
+            
+    except:
+        return JsonResponse({'message':'Error deleting user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 @api_view(['PUT'])
 def set_rate_limit_for_user(request):
@@ -248,4 +261,16 @@ def set_rate_limit_for_user(request):
             return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
     except:
         return JsonResponse({"message":"Error setting quota please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-               
+            
+
+def check_superuser(user):
+    
+    """Helper function to validate views that require superuser ie platform admin"""
+    
+    user_model = User.objects.filter(username=user)
+    if user_model and user_model[0].is_superuser:
+        return True
+    else:
+        return False
+        
+        

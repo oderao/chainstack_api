@@ -275,35 +275,39 @@ def set_rate_limit_for_user(request):
     """
     #check if request tracker already exists for user
     try:
-        request_limit = request.GET.get('request_limit',0)
-        reset = request.GET.get('reset')
-        user = request.GET.get('user')
-        if user and User.objects.filter(username=user):
-            #get user instance
-            user_model = User.objects.filter(username=user)
-            if user_model and user_model[0].is_superuser:
-                return JsonResponse({"message":"superuser has no limit"},safe=False,status=status.HTTP_404_NOT_FOUND)
-                
-        
-            #check if tracker already exists
-            request_tracker = APIRequestTracker.objects.filter(user=user_model[0])
+        if check_superuser(request.user):
+            request_limit = request.GET.get('request_limit',0)
+            reset = request.GET.get('reset')
+            user = request.GET.get('user')
+            if user and User.objects.filter(username=user):
+                #get user instance
+                user_model = User.objects.filter(username=user)
+                if user_model and user_model[0].is_superuser:
+                    return JsonResponse({"message":"superuser has no limit"},safe=False,status=status.HTTP_417_EXPECTATION_FAILED)
+                    
             
-            if request_tracker:
-                #update tracker
-                if reset: #reset all counters to zero
-                    request_limit = 0
-                    request_tracker[0].current_request_count = 0
-                request_tracker[0].request_limit = request_limit
-                request_tracker[0].save()
-                return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)
+                #check if tracker already exists
+                request_tracker = APIRequestTracker.objects.filter(user=user_model[0])
                 
+                if request_tracker:
+                    #update tracker
+                    if reset: #reset all counters to zero
+                        request_limit = 0
+                        request_tracker[0].current_request_count = 0
+                    request_tracker[0].request_limit = request_limit
+                    request_tracker[0].save()
+                    return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)
+                    
+                else:
+                    request_tracker = APIRequestTracker.objects.create(**{'user':user_model[0],'request_limit':request_limit})
+                    request_tracker.save()
+                    return JsonResponse({"message":"Rate limit set"},safe=False,status=status.HTTP_201_CREATED)
+                    
             else:
-                request_tracker = APIRequestTracker.objects.create(**{'user':user_model[0],'request_limit':request_limit})
-                request_tracker.save()
-                return JsonResponse({"message":"Rate limit set"},safe=False,status=status.HTTP_201_CREATED)
-                
+                return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
         else:
-            return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'message':'only admin can set rate limit'},status=status.HTTP_401_UNAUTHORIZED)
+            
     except:
         return JsonResponse({"message":"Error setting quota please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             

@@ -128,23 +128,25 @@ def update_news_item(request):
 @api_view(['DELETE'])
 def delete_news(request):
     """delete news item by its id"""
-    try:      
-      if request.method == "DELETE":
-         body_unicode = request.body.decode('utf-8')
-         body = json.loads(body_unicode)
-         if body.get('news_id'):
-            item = NewsItem.objects.get(pk=body.get("news_id"))
-            if item and item.created_by == request.user: #user should delete only resources they create
-               item.delete()
-               return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
-               
+    try:
+        if log_and_validate_request(request.user):
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            if body.get('news_id'):
+                item = NewsItem.objects.get(pk=body.get("news_id"))
+                if item and item.created_by == request.user: #user should delete only resources they create
+                    item.delete()
+                    return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
+                
+                else:
+                    return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
+                
             else:
-               return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
-               
-         else:
-            return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
-      return JsonResponse({'message':'Request method must be DELETE'},status=status.HTTP_403_FORBIDDEN)
-
+                return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
+        else:
+            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            
+        
     except NewsItem.DoesNotExist:
       return JsonResponse({"message":"Error deleting news item please try again later",
                            "error":"News Item Does not exist"

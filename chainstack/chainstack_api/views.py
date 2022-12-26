@@ -133,14 +133,16 @@ def delete_news(request):
     """delete news item by its id"""
     try:
         if log_and_validate_request(request.user):
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            if body.get('news_id'):
-                item = NewsItem.objects.get(pk=body.get("news_id"))
+            news_id = request.GET.get('news_id')
+            if news_id:
+                
+                    
+                item = NewsItem.objects.get(pk=news_id)
+                if item and check_superuser(request.user): #delete directly if superuser
+                    item.delete()
                 if item and item.created_by == request.user: #user should delete only resources they create
                     item.delete()
                     return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
-                
                 else:
                     return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
                 

@@ -14,6 +14,7 @@ urlpatterns = [
     path('set_quota',views.set_rate_limit_for_user),
     path('create_user',views.create_user),
     path('delete_user',views.delete_user),
+    path('list_users',views.list_users),
     path('get_auth_token/',views.generate_token)
     
     

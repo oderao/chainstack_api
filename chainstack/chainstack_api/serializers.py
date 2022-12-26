@@ -20,5 +20,5 @@ class NewsItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = NewsItem
         fields = ('news_id',"created_by",
-                  'date_created','title','url','story_type')
+                  'date_created','title','url','story_type','news_detail')
         

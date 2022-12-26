@@ -39,7 +39,7 @@ def generate_token(request):
     else:
         return JsonResponse({'message':'no user name or password in request'}, safe=False,status=status.HTTP_400_BAD_REQUEST)        
     
-@csrf_exempt #to test via local host postman
+
 @api_view(['POST'])
 def create_news_item(request):
     """_summary_
@@ -52,21 +52,19 @@ def create_news_item(request):
     """
     try:
         if log_and_validate_request(request.user):
-            if request.method == 'POST':
-                body_unicode = request.body.decode('utf-8')
-                context = {}
-                body = json.loads(body_unicode)
-                request_user = User.objects.filter(username=request.user)
-                if request_user:
-                    context = {'created_by':request_user[0]}
-                #build data object
-                body['news_id'] = generate_id()
-                serializer = NewsItemSerializer(data=body,context=context)
-                if serializer.is_valid():
-                    serializer.save()
-                    return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
-            else:
-                return JsonResponse({'message':'Request method must be POST'},status=status.HTTP_403_FORBIDDEN) #enforce post request for creation of news item
+            
+            body_unicode = request.body.decode('utf-8')
+            context = {}
+            body = json.loads(body_unicode)
+            request_user = User.objects.filter(username=request.user)
+            if request_user:
+                context = {'created_by':request_user[0]}
+            #build data object
+            body['news_id'] = generate_id()
+            serializer = NewsItemSerializer(data=body,context=context)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({'message':'News Item Created Successfully'}, safe=False,status=status.HTTP_201_CREATED)
         else:
             return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
@@ -93,31 +91,33 @@ def log_and_validate_request(user,rate_limit=0):
     #superuser shouldnt be rate limited
     
     user_object = User.objects.filter(username=user)
-    
-    if user and user_object[0].is_superuser:
-        return True
-    # #check if log exists
-    
-    request_tracker = APIRequestTracker.objects.filter(user=user)
-    
-    if request_tracker:
-        #check current_request_counter 
-        request_tracker = request_tracker[0]
-        if request_tracker.request_limit == 0: #0 is default means no rate limit has been set yet
+    if user_object:
+        if user_object[0].is_superuser:
             return True
-        if request_tracker.current_request_count >= request_tracker.request_limit:
-            return False
-        else: #update current request_count
-            request_tracker.current_request_count +=1
+        # #check if log exists
+        
+        request_tracker = APIRequestTracker.objects.filter(user=user)
+        
+        if request_tracker:
+            #check current_request_counter 
+            request_tracker = request_tracker[0]
+            if request_tracker.request_limit == 0: #0 is default means no rate limit has been set yet
+                return True
+            if request_tracker.current_request_count >= request_tracker.request_limit:
+                return False
+            else: #update current request_count
+                request_tracker.current_request_count +=1
+                request_tracker.save()
+                return True
+        else: #create a new tracker object
+            #get user instance
+            user = User.objects.filter(username=user)
+            user = user[0]
+            request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
             request_tracker.save()
             return True
-    else: #create a new tracker object
-        #get user instance
-        user = User.objects.filter(username=user)
-        user = user[0]
-        request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
-        request_tracker.save()
-        return True
+    else:
+        return False
 
         
             
@@ -128,23 +128,25 @@ def update_news_item(request):
 @api_view(['DELETE'])
 def delete_news(request):
     """delete news item by its id"""
-    try:      
-      if request.method == "DELETE":
-         body_unicode = request.body.decode('utf-8')
-         body = json.loads(body_unicode)
-         if body.get('news_id'):
-            item = NewsItem.objects.get(pk=body.get("news_id"))
-            if item and item.created_by == request.user: #user should delete only resources they create
-               item.delete()
-               return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
-               
+    try:
+        if log_and_validate_request(request.user):
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
+            if body.get('news_id'):
+                item = NewsItem.objects.get(pk=body.get("news_id"))
+                if item and item.created_by == request.user: #user should delete only resources they create
+                    item.delete()
+                    return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
+                
+                else:
+                    return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
+                
             else:
-               return JsonResponse({'message':'News Item does not exist in database or you dont have permission to delete'},status=status.HTTP_417_EXPECTATION_FAILED)
-               
-         else:
-            return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
-      return JsonResponse({'message':'Request method must be DELETE'},status=status.HTTP_403_FORBIDDEN)
-
+                return JsonResponse({'message':'No news_id in request data'},status=status.HTTP_417_EXPECTATION_FAILED)
+        else:
+            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            
+        
     except NewsItem.DoesNotExist:
       return JsonResponse({"message":"Error deleting news item please try again later",
                            "error":"News Item Does not exist"
@@ -155,11 +157,10 @@ def delete_news(request):
 def read_news(request):
     """retrieve news items created by single user or all by superuser """
     try: 
-        if request.method == 'GET':
+        if log_and_validate_request(request.user):
             #check if user is superuser ie admin
             user = User.objects.filter(username=request.user)
             if user and user[0].is_superuser:
-                pass
                 news_list = NewsItem.objects.all().order_by('-date_created')
             else:
                 news_list = NewsItem.objects.all().filter(created_by=request.user).order_by('-date_created')
@@ -169,6 +170,9 @@ def read_news(request):
             if news_list_data.data:
                 return JsonResponse(news_list_data.data, safe=False)
             return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
+        else:
+            return JsonResponse({'message':'Rate limit exceeded'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
+            
     except:
         return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         

@@ -11,6 +11,7 @@ urlpatterns = [
     path('create_news', views.create_news_item),
     path('list_news',views.read_news),
     path('delete_news',views.delete_news),
+    path('set_quota/',views.set_rate_limit_for_user),
     path('get_auth_token/',views.generate_token)
     
     

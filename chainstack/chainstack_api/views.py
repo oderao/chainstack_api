@@ -83,7 +83,7 @@ def generate_id():
 
 
 
-def log_and_validate_request(user):
+def log_and_validate_request(user,rate_limit=0):
     """Log all api requests and validate request limits
 
     Args:
@@ -91,11 +91,12 @@ def log_and_validate_request(user):
     """
     #NOTE Anon user rate limit is controlled is the django settings
     #superuser shouldnt be rate limited
-    user = User.objects.filter(username=user)
     
-    if user and user[0].is_superuser:
-        return True
-    #check if log exists
+    user_object = User.objects.filter(username=user)
+    
+    # if user and user_object[0].is_superuser:
+    #     return True
+    # #check if log exists
     
     request_tracker = APIRequestTracker.objects.filter(user=user)
     
@@ -166,3 +167,49 @@ def read_news(request):
             return JsonResponse(news_list_data.data, safe=False)
         return JsonResponse({"message":"No news available"},safe=False,status=status.HTTP_404_NOT_FOUND)
 
+
+def create_user(*args,**kwargs):
+    """Create user on the backend
+
+    Args:
+        request (_type_): _description_
+    """
+    pass
+
+def delete_user(request):
+    pass
+
+@api_view(['PUT'])
+def set_rate_limit_for_user(request):
+    """Set rate limit for user
+
+    Args:
+        request (_type_): http request object
+    """
+    #check if request tracker already exists for user
+    request_limit = request.GET.get('request_limit',0)
+    user = request.GET.get('user')
+    if user and User.objects.filter(username=user):
+        #get user instance
+        user_model = User.objects.filter(username=user)
+        if user_model and user_model[0].is_superuser:
+            return JsonResponse({"message":"superuser has no limit"},safe=False,status=status.HTTP_404_NOT_FOUND)
+            
+       
+        #check if tracker already exists
+        request_tracker = APIRequestTracker.objects.filter(user=user_model[0])
+        
+        if request_tracker:
+            #update tracker
+            request_tracker[0].request_limit = request_limit
+            request_tracker[0].save()
+            return JsonResponse({"message":"rate limit set"},safe=False,status=status.HTTP_200_OK)
+            
+        else:
+            request_tracker = APIRequestTracker.objects.create(**{'user':user_model[0],'request_limit':request_limit})
+            request_tracker.save()
+            return JsonResponse({"message":"Rate limit set"},safe=False,status=status.HTTP_201_CREATED)
+            
+    else:
+        return JsonResponse({"message":"user does not exist"},safe=False,status=status.HTTP_404_NOT_FOUND)
+        

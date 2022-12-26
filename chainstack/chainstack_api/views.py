@@ -212,7 +212,7 @@ def create_user(request,*args,**kwargs):
             else:
                 return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
         else:
-            return JsonResponse({'message':'only admin can delete user'},status=status.HTTP_401_UNAUTHORIZED)
+            return JsonResponse({'message':'only admin can create user'},status=status.HTTP_401_UNAUTHORIZED)
     except:
         return JsonResponse({'message':'Error creating user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             

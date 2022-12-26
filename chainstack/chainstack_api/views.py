@@ -135,11 +135,10 @@ def delete_news(request):
         if log_and_validate_request(request.user):
             news_id = request.GET.get('news_id')
             if news_id:
-                
-                    
                 item = NewsItem.objects.get(pk=news_id)
                 if item and check_superuser(request.user): #delete directly if superuser
                     item.delete()
+                    return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)
                 if item and item.created_by == request.user: #user should delete only resources they create
                     item.delete()
                     return JsonResponse({'message':'News Item deleted'},status=status.HTTP_200_OK)

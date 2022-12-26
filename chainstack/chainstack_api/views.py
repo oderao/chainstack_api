@@ -93,31 +93,33 @@ def log_and_validate_request(user,rate_limit=0):
     #superuser shouldnt be rate limited
     
     user_object = User.objects.filter(username=user)
-    
-    if user and user_object[0].is_superuser:
-        return True
-    # #check if log exists
-    
-    request_tracker = APIRequestTracker.objects.filter(user=user)
-    
-    if request_tracker:
-        #check current_request_counter 
-        request_tracker = request_tracker[0]
-        if request_tracker.request_limit == 0: #0 is default means no rate limit has been set yet
+    if user_object:
+        if user_object[0].is_superuser:
             return True
-        if request_tracker.current_request_count >= request_tracker.request_limit:
-            return False
-        else: #update current request_count
-            request_tracker.current_request_count +=1
+        # #check if log exists
+        
+        request_tracker = APIRequestTracker.objects.filter(user=user)
+        
+        if request_tracker:
+            #check current_request_counter 
+            request_tracker = request_tracker[0]
+            if request_tracker.request_limit == 0: #0 is default means no rate limit has been set yet
+                return True
+            if request_tracker.current_request_count >= request_tracker.request_limit:
+                return False
+            else: #update current request_count
+                request_tracker.current_request_count +=1
+                request_tracker.save()
+                return True
+        else: #create a new tracker object
+            #get user instance
+            user = User.objects.filter(username=user)
+            user = user[0]
+            request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
             request_tracker.save()
             return True
-    else: #create a new tracker object
-        #get user instance
-        user = User.objects.filter(username=user)
-        user = user[0]
-        request_tracker = APIRequestTracker.objects.create(**{'user':user,'current_request_count':1})
-        request_tracker.save()
-        return True
+    else:
+        return False
 
         
             

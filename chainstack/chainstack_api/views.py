@@ -71,7 +71,7 @@ def create_news_item(request):
         else:
             return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
-    except Exception as e:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'create_news')
         return JsonResponse({"message":"Error creating news item please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -152,7 +152,7 @@ def delete_news(request):
             return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
         
-    except NewsItem.DoesNotExist:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'delete news')
         return JsonResponse({"message":"Error deleting news item please try again later",
@@ -181,7 +181,7 @@ def read_news(request):
         else:
             return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
-    except:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'read_news')
         return JsonResponse({"message":"Error creating listing news items please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -246,7 +246,7 @@ def delete_user(request):
         else:
             return JsonResponse({'message':'only admin can delete user'},status=status.HTTP_401_UNAUTHORIZED)
                 
-    except:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'delete_user')
         return JsonResponse({'message':'Error deleting user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -268,7 +268,7 @@ def list_users(request):
         else:
             return JsonResponse({'message':'only admin can list users'},status=status.HTTP_401_UNAUTHORIZED)
             
-    except Exception as e:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'list_user')
         return JsonResponse({'message':'Error listing users please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -319,7 +319,7 @@ def set_rate_limit_for_user(request):
         else:
             return JsonResponse({'message':'only admin can set rate limit'},status=status.HTTP_401_UNAUTHORIZED)
             
-    except:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'set_rate_limit')
         return JsonResponse({"message":"Error setting quota please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -361,7 +361,7 @@ def create_admin(request):
                                 'user_details':user_dict},status=status.HTTP_201_CREATED)
         else:
             return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
-    except:
+    except Exception as ex:
         error = "".join(traceback.TracebackException.from_exception(ex).format())
         log_error(error,'create platform admin')
         return JsonResponse({'message':'Error creating platform admin'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)

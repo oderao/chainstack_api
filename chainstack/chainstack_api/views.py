@@ -24,11 +24,11 @@ def generate_token(request):
     Returns:
         _type_: List containing the token to use
     """
-    user_email = request.GET.get('user_email')
+    username = request.GET.get('username')
     password = request.GET.get('password')
-    if user_email and password:
+    if username and password:
         #check if user exists
-        user = User.objects.filter(email=user_email)
+        user = User.objects.filter(username=username)
         
         #verify password
         if user and user[0].check_password(password):

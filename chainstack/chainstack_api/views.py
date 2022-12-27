@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.contrib.auth.models import User
+import traceback
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication,TokenAuthentication
 
@@ -71,7 +72,8 @@ def create_news_item(request):
             return JsonResponse({'message':'Rate limit exceeded or invalid user'},status=status.HTTP_403_FORBIDDEN) #enforce rate limit
             
     except Exception as e:
-        print(e)
+        # error = "".join(traceback.TracebackException.from_exception(ex).format())
+        # log_error(error,'create_news')
         return JsonResponse({"message":"Error creating news item please try again later"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
    
    
@@ -213,7 +215,9 @@ def create_user(request,*args,**kwargs):
                 return JsonResponse({'message':'Username,password and email are manadatory parameters'},status=status.HTTP_417_EXPECTATION_FAILED)
         else:
             return JsonResponse({'message':'only admin can create user'},status=status.HTTP_401_UNAUTHORIZED)
-    except:
+    except Exception as ex:
+        error = "".join(traceback.TracebackException.from_exception(ex).format())
+        log_error(error,'create_news')
         return JsonResponse({'message':'Error creating user please try again later'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         

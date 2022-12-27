@@ -53,9 +53,10 @@ class APIRequestTracker(models.Model):
     
 class ErrorLog(models.Model):
     
-    log = models.TextField(null=True)
+    log = models.TextField(null=True,editable=False)
     log_view = models.CharField(null=True,max_length=100)
     log_id = models.CharField(max_length=100)
+    date_created = models.DateField(auto_now=True)
     
     def __str__(self):
         return str(self.log_id)

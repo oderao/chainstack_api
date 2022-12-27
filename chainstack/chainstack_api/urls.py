@@ -9,7 +9,7 @@ app_name = "chainstack_api"
 urlpatterns = [
     
     path('create_news', views.create_news_item),
-    path('list_news',views.read_news),
+    path('list_news',views.read_news,name='read-news'),
     path('delete_news',views.delete_news),
     path('set_quota',views.set_rate_limit_for_user),
     path('create_user',views.create_user),

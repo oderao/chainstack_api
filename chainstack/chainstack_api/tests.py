@@ -8,7 +8,7 @@ from .views import generate_id, read_news
 from django.contrib.auth.models import User
 
 class GetAllNewsTest(TestCase):
-    """ Test module for GET all puppies API """
+    """ Test module for GET all NewsItem API """
 
     def setUp(self):
        #create dummy user
@@ -50,7 +50,7 @@ class GetAllNewsTest(TestCase):
             news_id = generate_id()
             )
 
-    def test_get_all_puppies(self):
+    def test_get_all_news(self):
         client = Client()
         # get API response
         response = client.get(reverse('read-news'))

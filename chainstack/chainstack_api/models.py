@@ -50,3 +50,12 @@ class APIRequestTracker(models.Model):
     
     def __str__(self):
         return str(self.user)
+    
+class ErrorLog(models.Model):
+    
+    log = models.TextField(null=True)
+    log_view = models.CharField(null=True,max_length=100)
+    log_id = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return str(self.log_id)

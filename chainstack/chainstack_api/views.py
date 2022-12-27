@@ -2,7 +2,7 @@ import json,random,string
 from rest_framework import permissions,status
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import NewsItem,APIRequestTracker
+from .models import NewsItem,APIRequestTracker,ErrorLog
 from .serializers import NewsItemSerializer
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -351,3 +351,15 @@ def create_admin(request):
     except:
             return JsonResponse({'message':'Error creating platform admin'},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
+
+def log_error(error,log_view):
+    """helper function to log all request errors to Error Log Table
+
+    Args:
+        error (str): str of errortraceback
+        log_id (str): random id of log
+        log_view(str) : str where the view originates
+    """
+    error_log = ErrorLog.objects.create(**{'log':error,'log_view':log_view,'log_id':generate_id()})
+    error_log.save()
+    
